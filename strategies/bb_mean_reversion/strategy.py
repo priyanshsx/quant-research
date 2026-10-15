@@ -44,7 +44,18 @@ plt.show()
 def generate_signals(df):
     # add a column signal: 1 = enter long, -1: enter short,
     # 0 = exit, NaN = No new information 
+
+    # Long signal: yesterday's D1 candle wicks below the BB low band; long today's open
+    # Short signal: yesterday's D1 candle wicks above the BB upper band; short today's open 
+    # exit: 50% at bb middle, 50% at bb upper/lower (these exits should be calculated based on band values from the signal day)
+    # if a trade is already active, no other trades can be suggested by the strategy 
+    # short stop: stops just above the signal candle's high 
+    # long stop: stop just below the signal candle's low - 0.5% of price 
+    # after the 50% target hit, stops move to breakeven 
+    
     pass
+
+
 #--------------------------------------------------------------#
 
 # Offers details on positions (long/short)

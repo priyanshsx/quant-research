@@ -19,17 +19,15 @@
 import pandas as pd 
 import numpy as np 
 from core.fetch import load_clean
+from core.indicators import compute_bollinger
 #--------------------------------------------------------------#
 
 # Loads validated and cleaned asset data
 df = load_clean("BTC-USD", "2020-01-01", "2026-01-01")
-#--------------------------------------------------------------#
+df = compute_bollinger(df)
 
-# Computes bollinger bands
-def add_bollinger_bands(df):
-    # based on the data from above function, we compute the bollinger bands 
-    # columns: bb_mid, bb_upper, bb_lower
-    pass
+print(f"Manual calculation of the 20-day SMA: {(df['close'].iloc[0:20].mean())}")
+print(f"Function computed bb_middle: {(df['bb_middle'].iloc[19])}")
 #--------------------------------------------------------------#
 
 # Generates buy/sell signals 

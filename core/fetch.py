@@ -24,7 +24,7 @@ def validate(df):
    num_duplicates = duplicates.sum()
    if num_duplicates > 0:
       df = df[~duplicates]
-   print(f"Warning: dropped {num_duplicates} duplicate dates.")
+      print(f"Warning: dropped {num_duplicates} duplicate dates.")
 
    # checking for missing dates 
    calendar = pd.date_range(start=df.index.min(), end=df.index.max())

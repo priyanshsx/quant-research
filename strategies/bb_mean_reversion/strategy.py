@@ -23,13 +23,16 @@ import numpy as np
 # script structure
 
 def load_data(symbol, start, end):
-    # return dataframe with columns: open, high, low, close, volume 
+    # downloads data from yfinance 
+    # cleans and processes data and converts into a df 
+    # df with columns: open, high, low, close, volume 
     pass 
 #--------------------------------------------------------------#
 
 # computes bollinger bands
 def add_bollinger_bands(df):
-    # add columns: bb_mid, bb_upper, bb_lower
+    # based on the data from above function, we compute the bollinger bands 
+    # columns: bb_mid, bb_upper, bb_lower
     pass
 #--------------------------------------------------------------#
 

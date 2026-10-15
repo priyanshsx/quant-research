@@ -18,6 +18,7 @@
 
 import pandas as pd 
 import numpy as np 
+import core.fetch as fetch 
 #--------------------------------------------------------------#
 
 # script structure
@@ -56,4 +57,5 @@ def evaluate(df):
     # print the summary metrics 
     pass 
 #--------------------------------------------------------------#
+
 

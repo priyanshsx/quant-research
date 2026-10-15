@@ -20,15 +20,25 @@ import pandas as pd
 import numpy as np 
 from core.fetch import load_clean
 from core.indicators import compute_bollinger
+import matplotlib.pyplot as plt 
 #--------------------------------------------------------------#
 
 # Loads validated and cleaned asset data
 df = load_clean("BTC-USD", "2020-01-01", "2026-01-01")
 df = compute_bollinger(df)
-
-print(f"Manual calculation of the 20-day SMA: {(df['close'].iloc[0:20].mean())}")
-print(f"Function computed bb_middle: {(df['bb_middle'].iloc[19])}")
 #--------------------------------------------------------------#
+
+# Generates charts/visuals 
+window = df.loc["2025-01":"2026-01"]
+
+plt.figure(figsize=(12,6))
+plt.plot(window.index, window['close'], label='Close', color='black')
+plt.plot(window.index, window['bb_middle'], label='Middle', linestyle='--')
+plt.plot(window.index, window['bb_upper'], label='Upper')
+plt.plot(window.index, window['bb_lower'], label='Lower')
+plt.legend()
+plt.title("BTC-USD with Bollinger Bands (20, 2)")
+plt.show()
 
 # Generates buy/sell signals 
 def generate_signals(df):

@@ -75,7 +75,7 @@ def load_clean(ticker, start_date, end_date):
 #--------------------------------------------------------------#
 
 if __name__ == "__main__":
-    df = load_clean("BTC-USD", "2019-01-01", "2025-01-01")
-    df.info()
-    print(df.head())
+   df = load_clean("BTC-USD", "2019-01-01", "2025-01-01")
+   df.info()
+   print(df.head())
 #--------------------------------------------------------------#

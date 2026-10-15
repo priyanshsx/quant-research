@@ -49,9 +49,12 @@ def generate_signals(df):
     # Short signal: yesterday's D1 candle wicks above the BB upper band; short today's open 
     # exit: 50% at bb middle, 50% at bb upper/lower (these exits should be calculated based on band values from the signal day)
     # if a trade is already active, no other trades can be suggested by the strategy 
-    # short stop: stops just above the signal candle's high 
-    # long stop: stop just below the signal candle's low - 0.5% of price 
+    # short stop: stop just above the signal high * 1.005 
+    # long stop: stop just below the signal low * 0.995 of price 
     # after the 50% target hit, stops move to breakeven 
+    
+    # Structure
+    
     
     pass
 

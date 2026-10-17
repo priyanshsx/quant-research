@@ -17,7 +17,6 @@
 # Importing Libraries 
 
 import pandas as pd 
-import numpy as np 
 from core.fetch import load_clean
 from core.indicators import compute_bollinger
 import matplotlib.pyplot as plt 
@@ -31,43 +30,17 @@ df = compute_bollinger(df)
 # Generates charts/visuals 
 window = df.loc["2025-01":"2026-01"]
 
-plt.figure(figsize=(12,6))
-plt.plot(window.index, window['close'], label='Close', color='black')
-plt.plot(window.index, window['bb_middle'], label='Middle', linestyle='--')
-plt.plot(window.index, window['bb_upper'], label='Upper')
-plt.plot(window.index, window['bb_lower'], label='Lower')
-plt.legend()
-plt.title("BTC-USD with Bollinger Bands (20, 2)")
-plt.show()
+# plt.figure(figsize=(12,6))
+# plt.plot(window.index, window['close'], label='Close', color='black')
+# plt.plot(window.index, window['bb_middle'], label='Middle', linestyle='--')
+# plt.plot(window.index, window['bb_upper'], label='Upper')
+# plt.plot(window.index, window['bb_lower'], label='Lower')
+# plt.legend()
+# plt.title("BTC-USD with Bollinger Bands (20, 2)")
+# plt.show()
 
 # Generates buy/sell signals 
 def generate_signals(df):
-    # add a column signal: 1 = enter long, -1: enter short,
-    # 0 = exit, NaN = No new information 
-
-    # guidelines 
-    # Long signal: yesterday's D1 candle wicks below the BB low band; long today's open
-    # Short signal: yesterday's D1 candle wicks above the BB upper band; short today's open 
-    # exit: 50% at bb middle, 50% at bb upper/lower (these exits should be calculated based on band values from the signal day)
-    # if a trade is already active, no other trades can be suggested by the strategy 
-    # short stop: stop just above the signal high * 1.005 
-    # long stop: stop just below the signal low * 0.995 of price 
-    # after the 50% target hit, stops move to breakeven 
-    
-    # Structure
-    # for each day (starting from the inception of the bands):
-        # if in a trade:
-            # using today's high and low, check: 
-                # was the stop hit? 
-                    # if true, close anything left 
-                
-                # was target 1 hit? 
-                    # close half, move stop to entry
-                
-                # was target 2 hit? 
-                    # close the rest, record the trade 
-    
-
     trade_active = False
 
     trades = []
@@ -90,6 +63,7 @@ def generate_signals(df):
                 target_far = yesterday['bb_upper']
                 trade_active = True
                 remaining_size = 1.0
+                t1_hit = False 
                 print(f"Long details: {entry_date}, {direction}, {entry}, {stop}, {target_mid}, {target_far}")
 
             # Enter short
@@ -102,6 +76,7 @@ def generate_signals(df):
                 target_far = yesterday['bb_lower']
                 trade_active = True
                 remaining_size = 1.0
+                t1_hit = False 
                 print(f"Short Details: {entry_date}, {direction}, {entry: .2f}, {stop: .2f}, {target_mid: .2f}, {target_far: .2f}")
         #--------------------------------------------------------------#
 
@@ -119,22 +94,68 @@ def generate_signals(df):
                     size_closed = remaining_size
                     pnl = ((stop - entry)/entry) * 100
                     print(f"SL hit. Close date: {exit_date}, Exit Price: {stop: .2f}, Duration(days): {trade_duration_days}, Size Closed: {size_closed}, PnL(%): {pnl}")
-            
+                    continue
+
             # short stop hit 
             else:
                 if today['high'] >= stop:
-                    trade_active = True
+                    trade_active = False
                     exit_date = df.index[i]
                     trade_duration_days = exit_date - entry_date
                     size_closed = remaining_size
-                    pnl = ((stop - entry)/entry) * 100
-                    print(f"SL hit. Close date: {exit}, Exit Price: {stop}, Duration(days): {trade_duration_days}, Size Closed: {size_closed}, PnL(%): {pnl}")
+                    pnl = ((entry - stop)/entry) * 100
+                    print(f"SL hit. Close date: {exit_date}, Exit Price: {stop}, Duration(days): {trade_duration_days}, Size Closed: {size_closed}, PnL(%): {pnl}")
+                    continue
             #--------------------------------------------------------------#
 
         # Targets hit 
 
+            # Case: longs hit 
+            if direction == 'long':
+
+                # Case 1: when target 1 hits and stop moves to entry 
+                if not t1_hit and today['high'] >= target_mid:
+                    t1_hit = True
+                    size_closed = 0.5 
+                    target1_exit_date = df.index[i]
+                    remaining_size = size_closed
+                    stop = entry
+                    pnl = ((target_mid - entry)/entry) * 100 
+                    print(f"Target 1(mid) hit: Exit Date: {target1_exit_date}, Size Closed: {size_closed}, PnL(%): {pnl}")
+
+                # Case 2: when both targets are hit 
+                if t1_hit and today['high'] >= target_far:
+                    trade_active = False 
+                    exit_date = df.index[i]
+                    trade_duration_days = exit_date - entry_date 
+                    size_closed = remaining_size
+                    pnl = ((target_far - entry)/entry) * 100
+                    print(f"All targets hit. Close date: {exit_date}, Duration(days): {trade_duration_days}, PnL(%): {pnl}")
+
+            # Case: shorts hit 
+            if direction == 'short':
+
+                # Case 1: when target 1 hits and stop moves to entry 
+                if not t1_hit and today['low'] <= target_mid:
+                    t1_hit = True
+                    target1_exit_date = df.index[i]
+                    size_closed = 0.5
+                    remaining_size = size_closed
+                    stop = entry
+                    pnl = ((entry - target_mid)/entry) * 100 
+                    print(f"Target 1(mid) hit: Exit Date: {target1_exit_date}, Size Closed: {remaining_size}, PnL(%): {pnl}")
+
+                # Case 2: when both targets are hit 
+                if t1_hit and today['low'] <= target_far:
+                    trade_active = False 
+                    exit_date = df.index[i]
+                    trade_duration_days = exit_date - entry_date 
+                    size_closed = 0.0
+                    remaining_size = size_closed
+                    pnl = ((entry - target_far)/entry) * 100
+                    print(f"All targets hit. Close date: {exit_date}, Size Closed: {size_closed}, Duration(days): {trade_duration_days}, PnL(%): {pnl}")
 #--------------------------------------------------------------#
 
 print_signal = generate_signals(df)
-print(print_signal)
+print(df.loc["2024-03-10":"2024-03-20", ['open', 'high', 'low', 'close', 'bb_lower', 'bb_middle', 'bb_upper']])
 

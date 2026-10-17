@@ -227,7 +227,10 @@ trades['Net PnL(%)'] = trades['PnL(%)'] - FEES
 # Computes stats on the trades column 
 def compute_metrics(trades):
 
+    # Creates a new column, Contribution that calculates the total contribuion of each row to the trade 
     trades['Contribution'] = trades['Size Closed'] * trades['Net PnL(%)']
+
+    # Sums up the total pnl of that particular contribution 
     per_trades = trades.groupby('Entry Date')['Contribution'].sum()
 
     # Basic trade stats
@@ -239,10 +242,10 @@ def compute_metrics(trades):
 
     return ({
         "Number of trades": total_trades,
-        "Win Rate": float(round(win_rate, 2)),
-        "Average Win": float(round(avg_win, 2)),
-        "Average Loss": float(round(avg_loss, 2)),
-        "Expectancy": float(round(expectancy, 2))
+        "Win Rate (%)": float(round(win_rate, 2)),
+        "Average Win (%)": float(round(avg_win, 2)),
+        "Average Loss (%)": float(round(avg_loss, 2)),
+        "Expectancy (%)": float(round(expectancy, 2))
     })
 #--------------------------------------------------------------#
 

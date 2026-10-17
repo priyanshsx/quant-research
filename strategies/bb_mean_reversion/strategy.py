@@ -41,9 +41,9 @@ def generate_signals(df, period):
     for i in range(period, len(df)):
         today = df.iloc[i]
         yesterday = df.iloc[i - 1]
+        #--------------------------------------------------------------#
 
-        # if not in a trade 
-
+        # If NOT in a trade 
         if not trade_active:
             
             # Enter long 
@@ -71,7 +71,7 @@ def generate_signals(df, period):
                 t1_hit = False 
         #--------------------------------------------------------------#
 
-        # if in a trade:
+        # If IN a trade:
         if trade_active:
 
         # Stops hit 

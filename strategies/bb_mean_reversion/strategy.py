@@ -55,7 +55,7 @@ def generate_signals(df):
     # after the 50% target hit, stops move to breakeven 
     
     # Structure
-    # for each trade (starting from the inception of the bands):
+    # for each day (starting from the inception of the bands):
         # if in a trade:
             # using today's/yesterday's high and low, check: 
                 # was the stop hit? 
@@ -67,7 +67,7 @@ def generate_signals(df):
                 # was target 2 hit? 
                     # close the rest, record the trade 
         
-        # it not in a trade:
+        # if not in a trade:
             # look at yesterday's candle and bands:
                 # low below lower band? 
                     # enter long at today's open
@@ -76,27 +76,35 @@ def generate_signals(df):
                 # high above upper band? 
                     # enter short at today's open 
                     # set stop and targets 
-    
-    pass
 
+    trade_active = False
 
+    for i in range(20, len(df)):
+        today = df.iloc[i]
+        yesterday = df.iloc[i - 1]
+
+        # if in a trade:
+        # yet to be written 
+
+        # if not in a trade 
+        if not trade_active:
+            if yesterday['low'] < yesterday['bb_lower']:
+                direction = 'long'
+                entry = today['open']
+                stop = yesterday['low'] * 0.995
+                target_mid = yesterday['bb_middle']
+                target_far = yesterday['bb_upper']
+                print(f"Long details: {df.index[i]}, {direction}, {entry}, {stop}, {target_mid}, {target_far}")
+            
+            elif yesterday['high'] > yesterday['bb_upper']:
+                direction = 'short'
+                entry = today['open']
+                stop = yesterday['high'] * 1.005
+                target_mid = yesterday['bb_middle']
+                target_far = yesterday['bb_lower']
+                print(f"Short Details: {df.index[i]}, {direction}, {entry}, {stop}, {target_mid}, {target_far}")
 #--------------------------------------------------------------#
 
-# Offers details on positions (long/short)
-def compute_positions(df):
-    # turn signals into a 'position' column held day to day 
-    pass 
-#--------------------------------------------------------------#
-
-# 
-def compute_returns(df, cost_per_trade=0.001):
-    # add 'strategy_ret' and 'equity' columns
-    pass
-#--------------------------------------------------------------#
-
-def evaluate(df):
-    # print the summary metrics 
-    pass 
-#--------------------------------------------------------------#
-
+print_signal = generate_signals(df)
+print(print_signal)
 

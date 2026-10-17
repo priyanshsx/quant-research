@@ -19,5 +19,5 @@ def compute_bollinger(df, period=20, num_std=2):
     # Computes the lower band
     df['bb_lower'] = df['bb_middle'] - (num_std * df['stdev'])
 
-    return df 
+    return df
 #--------------------------------------------------------------#

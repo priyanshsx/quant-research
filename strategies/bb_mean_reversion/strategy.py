@@ -57,7 +57,7 @@ def generate_signals(df):
     # Structure
     # for each day (starting from the inception of the bands):
         # if in a trade:
-            # using today's/yesterday's high and low, check: 
+            # using today's high and low, check: 
                 # was the stop hit? 
                     # if true, close anything left 
                 
@@ -66,43 +66,73 @@ def generate_signals(df):
                 
                 # was target 2 hit? 
                     # close the rest, record the trade 
-        
-        # if not in a trade:
-            # look at yesterday's candle and bands:
-                # low below lower band? 
-                    # enter long at today's open
-                    # set stop and targets
-                
-                # high above upper band? 
-                    # enter short at today's open 
-                    # set stop and targets 
+    
 
     trade_active = False
+
+    trades = []
 
     for i in range(20, len(df)):
         today = df.iloc[i]
         yesterday = df.iloc[i - 1]
 
-        # if in a trade:
-        # yet to be written 
-
         # if not in a trade 
+
         if not trade_active:
+            
+            # Enter long 
             if yesterday['low'] < yesterday['bb_lower']:
                 direction = 'long'
                 entry = today['open']
+                entry_date = df.index[i]
                 stop = yesterday['low'] * 0.995
                 target_mid = yesterday['bb_middle']
                 target_far = yesterday['bb_upper']
-                print(f"Long details: {df.index[i]}, {direction}, {entry}, {stop}, {target_mid}, {target_far}")
-            
+                trade_active = True
+                remaining_size = 1.0
+                print(f"Long details: {entry_date}, {direction}, {entry}, {stop}, {target_mid}, {target_far}")
+
+            # Enter short
             elif yesterday['high'] > yesterday['bb_upper']:
                 direction = 'short'
                 entry = today['open']
+                entry_date = df.index[i]
                 stop = yesterday['high'] * 1.005
                 target_mid = yesterday['bb_middle']
                 target_far = yesterday['bb_lower']
-                print(f"Short Details: {df.index[i]}, {direction}, {entry}, {stop}, {target_mid}, {target_far}")
+                trade_active = True
+                remaining_size = 1.0
+                print(f"Short Details: {entry_date}, {direction}, {entry: .2f}, {stop: .2f}, {target_mid: .2f}, {target_far: .2f}")
+        #--------------------------------------------------------------#
+
+        # if in a trade:
+        if trade_active:
+
+        # Stops hit 
+
+            # long stop hit 
+            if direction == 'long':
+                if today['low'] <= stop:
+                    trade_active = False
+                    exit_date = df.index[i]
+                    trade_duration_days = exit_date - entry_date
+                    size_closed = remaining_size
+                    pnl = ((stop - entry)/entry) * 100
+                    print(f"SL hit. Close date: {exit_date}, Exit Price: {stop: .2f}, Duration(days): {trade_duration_days}, Size Closed: {size_closed}, PnL(%): {pnl}")
+            
+            # short stop hit 
+            else:
+                if today['high'] >= stop:
+                    trade_active = True
+                    exit_date = df.index[i]
+                    trade_duration_days = exit_date - entry_date
+                    size_closed = remaining_size
+                    pnl = ((stop - entry)/entry) * 100
+                    print(f"SL hit. Close date: {exit}, Exit Price: {stop}, Duration(days): {trade_duration_days}, Size Closed: {size_closed}, PnL(%): {pnl}")
+            #--------------------------------------------------------------#
+
+        # Targets hit 
+
 #--------------------------------------------------------------#
 
 print_signal = generate_signals(df)

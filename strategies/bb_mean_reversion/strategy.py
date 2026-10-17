@@ -21,19 +21,6 @@ df = load_clean(TICKER, START, END)
 df = compute_bollinger(df, PERIOD, NUM_STD)
 #--------------------------------------------------------------#
 
-# Generates charts/visuals 
-window = df.loc["2025-01":"2026-01"]
-
-# plt.figure(figsize=(12,6))
-# plt.plot(window.index, window['close'], label='Close', color='black')
-# plt.plot(window.index, window['bb_middle'], label='Middle', linestyle='--')
-# plt.plot(window.index, window['bb_upper'], label='Upper')
-# plt.plot(window.index, window['bb_lower'], label='Lower')
-# plt.legend()
-# plt.title("BTC-USD with Bollinger Bands (20, 2)")
-# plt.show()
-#--------------------------------------------------------------#
-
 # Generates buy/sell signals 
 def generate_signals(df, period):
     trade_active = False
@@ -249,6 +236,26 @@ def compute_metrics(trades):
     })
 #--------------------------------------------------------------#
 
+# Delivers results to the terminal 
 results = compute_metrics(trades)
 print(results)
+#--------------------------------------------------------------#
+
+# Equity Curve 
+sorted_trades = trades.sort_values(by='Exit Date')
+sorted_trades['Growth Factor'] = 1 + sorted_trades['Contribution']/100 
+equity = sorted_trades['Growth Factor'].cumprod()
+buy_hold = df['close'] / df['close'].iloc[0]
+#--------------------------------------------------------------#
+
+# Generates charts/visuals 
+
+plt.figure(figsize=(12, 6))
+plt.plot(sorted_trades['Exit Date'], equity, label='Strategy')
+plt.plot(df.index, buy_hold, label='Buy and Hold BTC')
+plt.legend()
+plt.title("Equity Curve: BB Mean Reversion vs Buy and Hold")
+plt.ylabel("Growth of $1")
+plt.yscale('log')
+plt.show()
 #--------------------end-of-code-------------------------------#

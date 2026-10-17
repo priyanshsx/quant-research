@@ -20,10 +20,17 @@ import pandas as pd
 from core.fetch import load_clean
 from core.indicators import compute_bollinger
 import matplotlib.pyplot as plt 
+
+# Global Variables 
+TICKER = 'BTC-USD'
+START = "2020-01-02"
+END = "2026-01-01"
+PERIOD = 20
+NUM_STD = 2
 #--------------------------------------------------------------#
 
 # Loads validated and cleaned asset data
-df = load_clean("BTC-USD", "2020-01-01", "2026-01-01")
+df = load_clean(TICKER, START, END)
 df = compute_bollinger(df)
 #--------------------------------------------------------------#
 
@@ -40,12 +47,12 @@ window = df.loc["2025-01":"2026-01"]
 # plt.show()
 
 # Generates buy/sell signals 
-def generate_signals(df):
+def generate_signals(df, period):
     trade_active = False
 
     trades = []
 
-    for i in range(20, len(df)):
+    for i in range(period, len(df)):
         today = df.iloc[i]
         yesterday = df.iloc[i - 1]
 
@@ -64,7 +71,6 @@ def generate_signals(df):
                 trade_active = True
                 remaining_size = 1.0
                 t1_hit = False 
-                print(f"Long details: {entry_date}, {direction}, {entry}, {stop}, {target_mid}, {target_far}")
 
             # Enter short
             elif yesterday['high'] > yesterday['bb_upper']:
@@ -77,7 +83,6 @@ def generate_signals(df):
                 trade_active = True
                 remaining_size = 1.0
                 t1_hit = False 
-                print(f"Short Details: {entry_date}, {direction}, {entry: .2f}, {stop: .2f}, {target_mid: .2f}, {target_far: .2f}")
         #--------------------------------------------------------------#
 
         # if in a trade:
@@ -93,7 +98,17 @@ def generate_signals(df):
                     trade_duration_days = exit_date - entry_date
                     size_closed = remaining_size
                     pnl = ((stop - entry)/entry) * 100
-                    print(f"SL hit. Close date: {exit_date}, Exit Price: {stop: .2f}, Duration(days): {trade_duration_days}, Size Closed: {size_closed}, PnL(%): {pnl}")
+                    trades.append({
+                        "Entry Date": entry_date,
+                        "Exit Date": exit_date,
+                        "Direction": direction,
+                        "Entry Price": entry,
+                        "Exit Price": stop, 
+                        "Duration(days)": trade_duration_days,
+                        "Size Closed": size_closed,
+                        "Reason": "Stop",
+                        "PnL(%)": pnl 
+                    })
                     continue
 
             # short stop hit 
@@ -104,7 +119,17 @@ def generate_signals(df):
                     trade_duration_days = exit_date - entry_date
                     size_closed = remaining_size
                     pnl = ((entry - stop)/entry) * 100
-                    print(f"SL hit. Close date: {exit_date}, Exit Price: {stop}, Duration(days): {trade_duration_days}, Size Closed: {size_closed}, PnL(%): {pnl}")
+                    trades.append({
+                        "Entry Date": entry_date,
+                        "Exit Date": exit_date,
+                        "Direction": direction,
+                        "Entry Price": entry,
+                        "Exit Price": stop, 
+                        "Duration(days)": trade_duration_days,
+                        "Size Closed": size_closed,
+                        "Reason": "Stop",
+                        "PnL(%)": pnl 
+                    })
                     continue
             #--------------------------------------------------------------#
 
@@ -118,19 +143,41 @@ def generate_signals(df):
                     t1_hit = True
                     size_closed = 0.5 
                     target1_exit_date = df.index[i]
+                    exit_price = target_mid
                     remaining_size = size_closed
                     stop = entry
                     pnl = ((target_mid - entry)/entry) * 100 
-                    print(f"Target 1(mid) hit: Exit Date: {target1_exit_date}, Size Closed: {size_closed}, PnL(%): {pnl}")
+                    trades.append({
+                        "Entry Date": entry_date,
+                        "Exit Date": exit_date,
+                        "Direction": direction,
+                        "Entry Price": entry,
+                        "Exit Price": exit_price, 
+                        "Duration(days)": target1_exit_date,
+                        "Size Closed": size_closed,
+                        "Reason": "Target 1",
+                        "PnL(%)": pnl 
+                    })
 
                 # Case 2: when both targets are hit 
                 if t1_hit and today['high'] >= target_far:
                     trade_active = False 
                     exit_date = df.index[i]
+                    exit_price = target_far
                     trade_duration_days = exit_date - entry_date 
                     size_closed = remaining_size
                     pnl = ((target_far - entry)/entry) * 100
-                    print(f"All targets hit. Close date: {exit_date}, Duration(days): {trade_duration_days}, PnL(%): {pnl}")
+                    trades.append({
+                        "Entry Date": entry_date,
+                        "Exit Date": exit_date,
+                        "Direction": direction,
+                        "Entry Price": entry,
+                        "Exit Price": exit_price, 
+                        "Duration(days)": exit_date,
+                        "Size Closed": size_closed,
+                        "Reason": "Target 2",
+                        "PnL(%)": pnl 
+                    })
 
             # Case: shorts hit 
             if direction == 'short':
@@ -139,23 +186,47 @@ def generate_signals(df):
                 if not t1_hit and today['low'] <= target_mid:
                     t1_hit = True
                     target1_exit_date = df.index[i]
+                    exit_price = target_mid
                     size_closed = 0.5
                     remaining_size = size_closed
                     stop = entry
                     pnl = ((entry - target_mid)/entry) * 100 
-                    print(f"Target 1(mid) hit: Exit Date: {target1_exit_date}, Size Closed: {remaining_size}, PnL(%): {pnl}")
+                    trades.append({
+                        "Entry Date": entry_date,
+                        "Exit Date": exit_date,
+                        "Direction": direction,
+                        "Entry Price": entry,
+                        "Exit Price": exit_price, 
+                        "Duration(days)": target1_exit_date,
+                        "Size Closed": size_closed,
+                        "Reason": "Target 1",
+                        "PnL(%)": pnl 
+                    })
 
                 # Case 2: when both targets are hit 
                 if t1_hit and today['low'] <= target_far:
                     trade_active = False 
                     exit_date = df.index[i]
+                    exit_price = target_far
                     trade_duration_days = exit_date - entry_date 
                     size_closed = 0.0
                     remaining_size = size_closed
                     pnl = ((entry - target_far)/entry) * 100
-                    print(f"All targets hit. Close date: {exit_date}, Size Closed: {size_closed}, Duration(days): {trade_duration_days}, PnL(%): {pnl}")
+                    trades.append({
+                        "Entry Date": entry_date,
+                        "Exit Date": exit_date,
+                        "Direction": direction,
+                        "Entry Price": entry,
+                        "Exit Price": exit_price, 
+                        "Duration(days)": exit_date,
+                        "Size Closed": size_closed,
+                        "Reason": "Target 2",
+                        "PnL(%)": pnl 
+                    })
+
+    return pd.DataFrame(trades)
 #--------------------------------------------------------------#
 
-print_signal = generate_signals(df)
-print(df.loc["2024-03-10":"2024-03-20", ['open', 'high', 'low', 'close', 'bb_lower', 'bb_middle', 'bb_upper']])
+trades = generate_signals(df, PERIOD)
+print(trades)
 

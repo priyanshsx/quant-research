@@ -45,6 +45,7 @@ def generate_signals(df):
     # add a column signal: 1 = enter long, -1: enter short,
     # 0 = exit, NaN = No new information 
 
+    # guidelines 
     # Long signal: yesterday's D1 candle wicks below the BB low band; long today's open
     # Short signal: yesterday's D1 candle wicks above the BB upper band; short today's open 
     # exit: 50% at bb middle, 50% at bb upper/lower (these exits should be calculated based on band values from the signal day)
@@ -54,7 +55,27 @@ def generate_signals(df):
     # after the 50% target hit, stops move to breakeven 
     
     # Structure
-    
+    # for each trade (starting from the inception of the bands):
+        # if in a trade:
+            # using today's/yesterday's high and low, check: 
+                # was the stop hit? 
+                    # if true, close anything left 
+                
+                # was target 1 hit? 
+                    # close half, move stop to entry
+                
+                # was target 2 hit? 
+                    # close the rest, record the trade 
+        
+        # it not in a trade:
+            # look at yesterday's candle and bands:
+                # low below lower band? 
+                    # enter long at today's open
+                    # set stop and targets
+                
+                # high above upper band? 
+                    # enter short at today's open 
+                    # set stop and targets 
     
     pass
 

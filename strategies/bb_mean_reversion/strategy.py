@@ -1,6 +1,7 @@
 # Importing Libraries 
 
 import pandas as pd 
+import numpy as np
 from core.fetch import load_clean
 from core.indicators import compute_bollinger
 import matplotlib.pyplot as plt 
@@ -12,11 +13,12 @@ START = "2020-01-02"
 END = "2026-01-01"
 PERIOD = 20
 NUM_STD = 2
+FEES = 0.1
 #--------------------------------------------------------------#
 
 # Loads validated and cleaned asset data
 df = load_clean(TICKER, START, END)
-df = compute_bollinger(df)
+df = compute_bollinger(df, PERIOD, NUM_STD)
 #--------------------------------------------------------------#
 
 # Generates charts/visuals 
@@ -132,14 +134,15 @@ def generate_signals(df, period):
                     exit_price = target_mid
                     remaining_size = size_closed
                     stop = entry
+                    trade_duration_days = target1_exit_date - entry_date
                     pnl = ((target_mid - entry)/entry) * 100 
                     trades.append({
                         "Entry Date": entry_date,
-                        "Exit Date": exit_date,
+                        "Exit Date": target1_exit_date,
                         "Direction": direction,
                         "Entry Price": entry,
                         "Exit Price": exit_price, 
-                        "Duration(days)": target1_exit_date,
+                        "Duration(days)": trade_duration_days,
                         "Size Closed": size_closed,
                         "Reason": "Target 1",
                         "PnL(%)": pnl 
@@ -159,7 +162,7 @@ def generate_signals(df, period):
                         "Direction": direction,
                         "Entry Price": entry,
                         "Exit Price": exit_price, 
-                        "Duration(days)": exit_date,
+                        "Duration(days)": trade_duration_days,
                         "Size Closed": size_closed,
                         "Reason": "Target 2",
                         "PnL(%)": pnl 
@@ -175,15 +178,16 @@ def generate_signals(df, period):
                     exit_price = target_mid
                     size_closed = 0.5
                     remaining_size = size_closed
+                    trade_duration_days = target1_exit_date - entry_date
                     stop = entry
                     pnl = ((entry - target_mid)/entry) * 100 
                     trades.append({
                         "Entry Date": entry_date,
-                        "Exit Date": exit_date,
+                        "Exit Date": target1_exit_date,
                         "Direction": direction,
                         "Entry Price": entry,
                         "Exit Price": exit_price, 
-                        "Duration(days)": target1_exit_date,
+                        "Duration(days)": trade_duration_days,
                         "Size Closed": size_closed,
                         "Reason": "Target 1",
                         "PnL(%)": pnl 
@@ -195,8 +199,8 @@ def generate_signals(df, period):
                     exit_date = df.index[i]
                     exit_price = target_far
                     trade_duration_days = exit_date - entry_date 
-                    size_closed = 0.0
-                    remaining_size = size_closed
+                    size_closed = 0.5
+                    remaining_size = 0.0
                     pnl = ((entry - target_far)/entry) * 100
                     trades.append({
                         "Entry Date": entry_date,
@@ -204,7 +208,7 @@ def generate_signals(df, period):
                         "Direction": direction,
                         "Entry Price": entry,
                         "Exit Price": exit_price, 
-                        "Duration(days)": exit_date,
+                        "Duration(days)": trade_duration_days,
                         "Size Closed": size_closed,
                         "Reason": "Target 2",
                         "PnL(%)": pnl 
@@ -213,7 +217,35 @@ def generate_signals(df, period):
     return pd.DataFrame(trades)
 #--------------------------------------------------------------#
 
+# Generates the trades table
 trades = generate_signals(df, PERIOD)
-print(trades)
 
+# Computes Net PnL (taking into account fees)
+trades['Net PnL(%)'] = trades['PnL(%)'] - FEES 
+#--------------------------------------------------------------#
+
+# Computes stats on the trades column 
+def compute_metrics(trades):
+
+    trades['Contribution'] = trades['Size Closed'] * trades['Net PnL(%)']
+    per_trades = trades.groupby('Entry Date')['Contribution'].sum()
+
+    # Basic trade stats
+    total_trades = len(per_trades)
+    win_rate = (per_trades > 0).mean() * 100
+    avg_win = per_trades[per_trades > 0].mean()
+    avg_loss = per_trades[per_trades <= 0].mean()
+    expectancy = per_trades.mean()
+
+    return ({
+        "Number of trades": total_trades,
+        "Win Rate": float(round(win_rate, 2)),
+        "Average Win": float(round(avg_win, 2)),
+        "Average Loss": float(round(avg_loss, 2)),
+        "Expectancy": float(round(expectancy, 2))
+    })
+#--------------------------------------------------------------#
+
+results = compute_metrics(trades)
+print(results)
 #--------------------end-of-code-------------------------------#

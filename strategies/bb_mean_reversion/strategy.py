@@ -232,7 +232,8 @@ def compute_metrics(trades):
         "Win Rate (%)": float(round(win_rate, 2)),
         "Average Win (%)": float(round(avg_win, 2)),
         "Average Loss (%)": float(round(avg_loss, 2)),
-        "Expectancy (%)": float(round(expectancy, 2))
+        "Expectancy (%)": float(round(expectancy, 2)),
+        "Longest Trades Duration (days)": trades.sort_values('Duration(days)', ascending=False).head(10)
     })
 #--------------------------------------------------------------#
 
@@ -241,13 +242,19 @@ results = compute_metrics(trades)
 print(results)
 #--------------------------------------------------------------#
 
-# Equity Curve 
+# Equity Curve & Max Drawdown 
 sorted_trades = trades.sort_values(by='Exit Date')
 sorted_trades['Growth Factor'] = 1 + sorted_trades['Contribution']/100 
 equity = sorted_trades['Growth Factor'].cumprod()
 buy_hold = df['close'] / df['close'].iloc[0]
 #--------------------------------------------------------------#
 
+# Computes max drawdown 
+def max_drawdown(series):
+    running_peak = series.cummax()
+    drawdown = series/running_peak - 1
+    return drawdown.min() * 100 
+#--------------------------------------------------------------#
 # Generates charts/visuals 
 
 plt.figure(figsize=(12, 6))

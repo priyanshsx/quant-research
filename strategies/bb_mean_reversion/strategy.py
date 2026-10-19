@@ -261,12 +261,43 @@ def compute_metrics(trades, df):
     return results, equity, buy_hold
 #--------------------------------------------------------------#
 
+# Breaks down the trades to get a deeper understanding of why the strategy works/doesn't work 
+def compute_breakdowns(trades):
+    per_trades = trades.groupby('Entry Date').agg(
+        direction=('Direction', 'first'), 
+        pnl=('Contribution', 'sum'),
+        outcome=('Reason', lambda reasons: ' + '.join(reasons)),
+    )
+    per_trades['year'] = per_trades.index.year
+    per_trades['win'] = per_trades['pnl'] > 0
+    return per_trades
+#--------------------------------------------------------------#
+
+# Summarizes the beakdowns 
+def summarize(per_trades, column):
+    summary = per_trades.groupby(column).agg(
+        trades=('pnl', 'count'),
+        win_rate=('win', 'mean'),
+        expectancy=('pnl', 'mean'),
+        total_pnl=('pnl', 'sum'),
+    )
+    summary['win_rate'] = summary['win_rate'] * 100 
+    return summary.round(2)
+#--------------------------------------------------------------#
+
 # Computes the results and charts and saves the results and trades csv 
 results, equity, buy_hold = compute_metrics(trades, df)
+per_trades = compute_breakdowns(trades)
+#--------------------------------------------------------------#
+
+# Prints results 
 print(results)
 print(trades.sort_values('Duration(days)', ascending=False).head(10))
-pd.DataFrame([results]).to_csv("/Users/priyanshsaxena/Documents/d/quant-research/quant-research-public-repo/strategies/bb_mean_reversion/results/bb_mean_reversion_summary.csv", index=False)
-trades.to_csv("/strategies/bb_mean_reversion/results/trade_log.csv", index=False)
+print("\nBy direction:\n", summarize(per_trades, 'direction'))
+print("\nBy year:\n", summarize(per_trades, 'year'))
+print("\nBy outcome:\n", summarize(per_trades, 'outcome'))
+pd.DataFrame([results]).to_csv("strategies/bb_mean_reversion/results/bb_mean_reversion_summary.csv", index=False)
+trades.to_csv("strategies/bb_mean_reversion/results/trade_log.csv", index=False)
 #--------------------------------------------------------------#
 
 # Generates charts/visuals 
@@ -277,7 +308,7 @@ plt.legend()
 plt.title("Equity Curve: BB Mean Reversion vs Buy and Hold")
 plt.ylabel("Growth of $1")
 plt.yscale('log')
-plt.savefig("/strategies/bb_mean_reversion/results/equity_curve.png")
+plt.savefig("strategies/bb_mean_reversion/results/equity_curve.png")
 plt.show()
 #--------------------------------------------------------------#
 

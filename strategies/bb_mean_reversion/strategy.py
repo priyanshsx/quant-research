@@ -260,6 +260,8 @@ def compute_metrics(trades, df):
 results, equity, buy_hold = compute_metrics(trades, df)
 print(results)
 print(trades.sort_values('Duration(days)', ascending=False).head(10))
+pd.DataFrame([results]).to_csv("/Users/priyanshsaxena/Documents/d/quant-research/quant-research-public-repo/strategies/bb_mean_reversion/results/bb_mean_reversion_summary.csv", index=False)
+trades.to_csv("/Users/priyanshsaxena/Documents/d/quant-research/quant-research-public-repo/strategies/bb_mean_reversion/results/trade_log.csv", index=False)
 #--------------------------------------------------------------#
 
 # Generates charts/visuals 
@@ -270,5 +272,6 @@ plt.legend()
 plt.title("Equity Curve: BB Mean Reversion vs Buy and Hold")
 plt.ylabel("Growth of $1")
 plt.yscale('log')
+plt.savefig("/Users/priyanshsaxena/Documents/d/quant-research/quant-research-public-repo/strategies/bb_mean_reversion/results/equity_curve.png")
 plt.show()
 #--------------------end-of-code-------------------------------#

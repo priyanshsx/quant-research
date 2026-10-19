@@ -1,4 +1,8 @@
-# Importing Libraries 
+#--------------------beginning-of-code--------------------------#
+
+#--------------------------------------------------------------#
+
+# Imports Libraries 
 
 import pandas as pd 
 import numpy as np
@@ -7,7 +11,7 @@ from core.indicators import compute_bollinger
 import matplotlib.pyplot as plt 
 #--------------------------------------------------------------#
 
-# Global Variables 
+# Sets global variables 
 TICKER = 'BTC-USD'
 START = "2020-01-02"
 END = "2026-01-01"
@@ -227,14 +231,14 @@ def compute_metrics(trades, df):
     # Sums up the total pnl of that particular contribution 
     per_trades = trades.groupby('Entry Date')['Contribution'].sum()
 
-    # Basic trade stats
+    # Computes basic trade stats
     total_trades = len(per_trades)
     win_rate = (per_trades > 0).mean() * 100
     avg_win = per_trades[per_trades > 0].mean()
     avg_loss = per_trades[per_trades <= 0].mean()
     expectancy = per_trades.mean()
 
-    # Equity stats 
+    # Computes equity stats against simply buying and holding an asset 
     sorted_trades = trades.sort_values(by='Exit Date')
     sorted_trades['Growth Factor'] = 1 + sorted_trades['Contribution']/100
     equity = sorted_trades['Growth Factor'].cumprod()
@@ -257,6 +261,7 @@ def compute_metrics(trades, df):
     return results, equity, buy_hold
 #--------------------------------------------------------------#
 
+# Computes the results and charts and saves the results and trades csv 
 results, equity, buy_hold = compute_metrics(trades, df)
 print(results)
 print(trades.sort_values('Duration(days)', ascending=False).head(10))
@@ -274,4 +279,6 @@ plt.ylabel("Growth of $1")
 plt.yscale('log')
 plt.savefig("/strategies/bb_mean_reversion/results/equity_curve.png")
 plt.show()
+#--------------------------------------------------------------#
+
 #--------------------end-of-code-------------------------------#
